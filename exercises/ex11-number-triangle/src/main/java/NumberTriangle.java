@@ -2,6 +2,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+import java.util.Arrays;
 
 /**
  * Exercise (Chapter: APIs, JSON, and Files) — reading data from a file into objects.
@@ -109,7 +113,25 @@ public class NumberTriangle {
     //       value of wherever you ended up. An empty path means "stay here".
     //       Hint: String#charAt(int) and String#length() are all you need for the
     //       iterative version; a recursive version can use String#substring(1).
-    return 0;
+
+    NumberTriangle t = this;
+    int i = 0;
+    while (i < path.length()) {
+      try {
+        if (path.charAt(i) == 'l') {
+          t = t.left;
+          i++;
+        } else if (path.charAt(i) == 'r') {
+          t = t.right;
+          i++;
+        } else {
+          throw new IllegalArgumentException("Invalid path.");
+        }
+      } catch (NullPointerException e) {
+          throw new IllegalArgumentException("Path too long");
+      }
+    }
+    return t.getRoot();
   }
 
   /**
@@ -167,9 +189,7 @@ public class NumberTriangle {
     // of the "APIs, JSON, and Files" chapter.
     BufferedReader br = Files.newBufferedReader(Path.of(fname));
 
-    // TODO: define any variables that you want to use to keep track of things
-    //       between iterations of the loop below (for example, the row of
-    //       NumberTriangle objects that you built on the previous iteration).
+    List<NumberTriangle> prev_tri = new ArrayList<>();
 
     // We need to return the top of the NumberTriangle, so here is a variable for it.
     NumberTriangle top = null;
@@ -181,10 +201,25 @@ public class NumberTriangle {
       // prints the contents of the file when you run it.
       System.out.println(line);
 
-      // TODO: process the line. Splitting it on spaces gives you the numbers in
-      //       this row; make a NumberTriangle for each one, then wire this row up
-      //       as the children of the previous row. Remember the aliasing: the
-      //       right child of one node is the left child of the next node over.
+      int[] numbers = Arrays.asList(line.split(" ")).stream()
+              .mapToInt(Integer::parseInt)
+              .toArray();
+      if (numbers.length == 1) {
+        top = new NumberTriangle(numbers[0]);
+        prev_tri.add(top);
+        line = br.readLine();
+        continue;
+      }
+      List<NumberTriangle> curr_tri = new ArrayList<>();
+      for (int i = 0; i < numbers.length; i++) {
+        curr_tri.add(new NumberTriangle(numbers[i]));
+      }
+      for (int i = 0; i < numbers.length - 1; i++) {
+        NumberTriangle t = prev_tri.get(i);
+        t.setLeft(curr_tri.get(i));
+        t.setRight(curr_tri.get(i + 1));
+      }
+      prev_tri = curr_tri;
 
       // read the next line
       line = br.readLine();
